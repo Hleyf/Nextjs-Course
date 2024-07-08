@@ -30,4 +30,12 @@ body {
   .text-balance {
     text-wrap: balance;
   }
-}
+
+  /* To remove scrollbars on global 404, it only worked with one of them */
+  .no-scrollbar::-webkit-scrollbar {display: none;} /*! For Chromium based and Safari */
+  .no-scrollbar {
+    -ms-overflow-style: none; /*! For Edge */
+    scrollbar-width: none; /*! For Firefox */
+  }
+  }
+
