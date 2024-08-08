@@ -1,28 +1,35 @@
-import { Pokemon } from "@/pokemons";
-import { Metadata } from "next";
+
+import { Pokemon, PokemonsResponse } from "@/pokemons";
+import next, { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
 interface Props {
-    params: { id: string }
+    params: { name: string }
 }
 
 /**
  * @function generateStaticParams
- * @description This function generates an array of objects representing the static parameters (paths) for a dynamic page.
- * @returns {Promise<{ id: string }[]>} An array of objects, where each object has an `id` property of type string.
-*/
+ * @description Generates an array of objects representing the static parameters (paths) for a dynamic page.
+ * @returns {Promise<{ name: string }[]>} An array of objects, where each object has an `id` property of type string.
+ *
+ */
 //! On build time
 export async function generateStaticParams() {
 
-return  Array.from({ length: 151 }, (v, i) => i + 1).map(id => ({ id: id.toString() }));
+    const data : PokemonsResponse= await fetch(`https://pokeapi.co/api/v2/pokemon?limit=151`)
+    .then(res => res.json()); 
+
+    return data.results.map(({name}) => ({
+        name: name
+    }));
 
 }
 
 // Generate metadata dynamically
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     try{
-      const { id, name } = await getPokemon(params.id); //Same API call twice... not the most intuitive but taking advantage of cache management + server side 
+      const { id, name } = await getPokemon(params.name); //Same API call twice... not the most intuitive but taking advantage of cache management + server side 
       
       return {
           title: `#${id} - ${name}`,
@@ -38,11 +45,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     
 }
 
-const getPokemon = async (id: string): Promise<Pokemon> => {
+const getPokemon = async (name: string): Promise<Pokemon> => {
     
   try {
-    const pokemon: Pokemon = await fetch(`http://pokeapi.co/api/v2/pokemon/${id}`,
-        // { cache: 'force-cache' }
+    const pokemon: Pokemon = await fetch(`http://pokeapi.co/api/v2/pokemon/${name}`, {
+        next: { revalidate: 60 * 60 * 30 * 6 }
+    }
+        
     ).then(res => res.json());
     console.log(pokemon.name)
 
@@ -55,7 +64,7 @@ const getPokemon = async (id: string): Promise<Pokemon> => {
 
 export default async function PokemonPage({ params }: Props) {
 
-    const pokemon = await getPokemon(params.id);
+    const pokemon = await getPokemon(params.name);
     
   
     return (
